@@ -28,22 +28,9 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
 [data-testid="stHeader"] { background: #0d1117 !important; }
 [data-testid="stSidebar"] { background: #161b22 !important; }
 
-/* 壓縮頁面 padding；預留 fixed 搜尋列的高度（header ≈ 3rem + form ≈ 3.5rem） */
-.block-container { padding: 6.75rem 1rem 0.5rem 1rem !important; max-width: 100% !important; }
+/* 壓縮頁面 padding */
+.block-container { padding: 0.5rem 1rem 0.5rem 1rem !important; max-width: 100% !important; }
 [data-testid="stVerticalBlock"] { gap: 0.3rem !important; }
-
-/* 搜尋列 fixed：永遠釘在 Streamlit header 下方 */
-div[data-testid="stForm"] {
-    position: fixed !important;
-    top: 3rem;           /* Streamlit header 高度 */
-    left: 0;
-    right: 0;
-    z-index: 200;
-    background: #0d1117;
-    padding: 6px 1rem 6px;
-    border-bottom: 1px solid #30363d;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.6);
-}
 
 /* 自訂元件卡片 */
 .card {
@@ -573,6 +560,14 @@ def mini_candle(df, title, height=180):
 # Session state 管理股票代號
 if "symbol" not in st.session_state:
     st.session_state.symbol = "3661"
+
+# 初次開啟頁面時捲到最頂端，讓搜尋列可見（auto-refresh 不觸發）
+if "page_initialized" not in st.session_state:
+    st.session_state.page_initialized = True
+    try:
+        st.scroll_to()  # Streamlit 1.36+
+    except AttributeError:
+        pass
 
 # 盤中自動刷新（每 60 秒）
 market_open = is_market_open()
