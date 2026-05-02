@@ -561,13 +561,36 @@ def mini_candle(df, title, height=180):
 if "symbol" not in st.session_state:
     st.session_state.symbol = "3661"
 
-# 初次開啟頁面時捲到最頂端，讓搜尋列可見（auto-refresh 不觸發）
-if "page_initialized" not in st.session_state:
-    st.session_state.page_initialized = True
-    try:
-        st.scroll_to()  # Streamlit 1.36+
-    except AttributeError:
-        pass
+# 強制把頁面 scrollTop 設回 0（持續 1.5 秒蓋過 Streamlit 的初始化行為）
+# sessionStorage 確保只在每次瀏覽器 Session 第一次載入時執行
+st.components.v1.html("""
+<script>
+(function() {
+    var KEY = '_st_scroll_init';
+    if (sessionStorage.getItem(KEY)) return;
+    sessionStorage.setItem(KEY, '1');
+    var n = 0;
+    (function go() {
+        try {
+            var p = window.parent;
+            /* 找 Streamlit 的 scroll container（div.main / stMain 下的第一個 div） */
+            var sels = [
+                '[data-testid="stMain"] > div',
+                '[data-testid="stAppViewBlockContainer"]',
+                '.main'
+            ];
+            sels.forEach(function(sel) {
+                p.document.querySelectorAll(sel).forEach(function(el) {
+                    el.scrollTop = 0;
+                });
+            });
+            p.scrollTo(0, 0);
+        } catch(e) {}
+        if (++n < 15) setTimeout(go, 100);   /* 每 100ms 一次，共 1.5 秒 */
+    })();
+})();
+</script>
+""", height=0, scrolling=False)
 
 # 盤中自動刷新（每 60 秒）
 market_open = is_market_open()
