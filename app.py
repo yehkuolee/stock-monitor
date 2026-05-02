@@ -31,9 +31,12 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
 /* 壓縮頁面 padding */
 .block-container { padding: 0.5rem 1rem 0.5rem 1rem !important; max-width: 100% !important; }
 
-/* 手機上隱藏主頁面搜尋列（側欄的 form 不隱藏） */
+/* 手機上讓主頁面搜尋列隱形但保留佔位（讓 Streamlit scroll 計算正確） */
 @media (max-width: 768px) {
-    [data-testid="stMain"] div[data-testid="stForm"] { display: none !important; }
+    [data-testid="stMain"] div[data-testid="stForm"] {
+        visibility: hidden !important;
+        pointer-events: none !important;
+    }
 }
 [data-testid="stVerticalBlock"] { gap: 0.3rem !important; }
 
