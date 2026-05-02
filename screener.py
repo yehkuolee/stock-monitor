@@ -128,8 +128,8 @@ def parse_realtime(item: dict) -> dict | None:
     if not price or not yday:
         return None
 
-    bid_vols = [float(x) for x in item.get("g", "").split("_") if x]
-    ask_vols = [float(x) for x in item.get("f", "").split("_") if x]
+    bid_vols = [float(x) for x in item.get("g", "").split("_") if x and x != "-"]
+    ask_vols = [float(x) for x in item.get("f", "").split("_") if x and x != "-"]
 
     return {
         "code":     item.get("c", ""),
