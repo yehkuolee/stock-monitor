@@ -185,6 +185,62 @@ def is_market_open() -> bool:
     return 9 * 60 <= t <= 13 * 60 + 35
 
 
+@st.cache_data(ttl=86400)
+def get_stock_map() -> dict:
+    """股票名稱/代號 → 代號 對照表（每日快取）"""
+    mapping = {}
+    try:
+        resp = requests.get(
+            "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockInfo",
+            timeout=15, verify=False
+        )
+        for s in resp.json().get("data", []):
+            code = s.get("stock_id", "")
+            name = s.get("stock_name", "")
+            if code and name:
+                mapping[code] = code          # 代號 → 代號
+                mapping[name] = code          # 全名 → 代號
+    except Exception:
+        pass
+    # 常用備用（FinMind 失敗時兜底）
+    fallback = {
+        "台積電": "2330", "鴻海": "2317", "聯發科": "2454",
+        "緯穎": "6669", "世芯": "3661", "世芯-KY": "3661",
+        "台達電": "2308", "廣達": "2382", "日月光": "3711",
+        "聯電": "2303", "中華電": "2412", "國泰金": "2882",
+        "富邦金": "2881", "中信金": "2891", "兆豐金": "2886",
+        "台新金": "2887", "第一金": "2892", "永豐金": "2890",
+        "中鋼": "2002", "台塑": "1301", "南亞": "1303",
+        "元大台灣50": "0050", "元大高股息": "0056",
+        "緯創": "3231", "仁寶": "2324", "英業達": "2356",
+        "華碩": "2357", "技嘉": "2376", "微星": "2377",
+        "台光電": "2383", "臻鼎": "4958", "景碩": "3189",
+    }
+    for k, v in fallback.items():
+        if k not in mapping:
+            mapping[k] = v
+    return mapping
+
+
+def resolve_symbol(query: str, stock_map: dict) -> tuple[str, str | None]:
+    """
+    輸入代號或名稱，回傳 (代號, 找到的名稱 or None)
+    支援完整名稱、部分名稱、代號
+    """
+    q = query.strip()
+    if not q:
+        return q, None
+    # 完全匹配（代號或全名）
+    if q in stock_map:
+        return stock_map[q], None
+    # 部分名稱模糊匹配（取第一筆）
+    for name, code in stock_map.items():
+        if q in name and not name.isdigit():
+            return code, name
+    # 找不到就原樣回傳（可能是有效代號）
+    return q, None
+
+
 @st.cache_data(ttl=900)
 def fetch_daily(symbol: str) -> pd.DataFrame:
     for suffix in [".TW", ".TWO"]:
@@ -542,10 +598,18 @@ with st.form("main_search", border=False):
     with mc2:
         main_submitted = st.form_submit_button("🔍 分析", use_container_width=True)
 if main_submitted and input_symbol.strip():
-    st.session_state.symbol = input_symbol.strip()
+    stock_map = get_stock_map()
+    resolved, matched_name = resolve_symbol(input_symbol.strip(), stock_map)
+    st.session_state.symbol = resolved
+    if matched_name:
+        st.session_state.matched_name = matched_name
+    else:
+        st.session_state.pop("matched_name", None)
     st.rerun()
 
 symbol = st.session_state.symbol
+if "matched_name" in st.session_state:
+    st.caption(f"🔍 「{st.session_state.matched_name}」→ {symbol}")
 
 # 載入資料
 with st.spinner(f"載入 {symbol}..."):
