@@ -589,11 +589,12 @@ with st.sidebar:
 # ── 主畫面搜尋列（桌機 + 手機都能用）────────────────────────────────────────
 with st.form("main_search", border=False):
     input_symbol = st.text_input(
-        "🔍 輸入股票代號或名稱",
+        "股票代號或名稱",
         value=st.session_state.symbol,
-        placeholder="例：2330、台積電、聯發科、0050",
+        placeholder="代號或名稱，例：2330、台積電",
+        label_visibility="collapsed",
     )
-    main_submitted = st.form_submit_button("分析", use_container_width=True, type="primary")
+    main_submitted = st.form_submit_button("🔍 分析", use_container_width=True, type="primary")
 if main_submitted and input_symbol.strip():
     stock_map = get_stock_map()
     resolved, matched_name = resolve_symbol(input_symbol.strip(), stock_map)
