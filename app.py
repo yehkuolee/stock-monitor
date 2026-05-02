@@ -15,7 +15,7 @@ st.set_page_config(
     page_title="台股技術分析監測器",
     layout="wide",
     page_icon="📈",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 st.markdown("""
@@ -31,6 +31,17 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
 /* 壓縮頁面 padding */
 .block-container { padding: 0.5rem 1rem 0.5rem 1rem !important; max-width: 100% !important; }
 [data-testid="stVerticalBlock"] { gap: 0.3rem !important; }
+
+/* 搜尋列固定在頁面頂部 */
+.search-bar {
+    position: sticky;
+    top: 0;
+    z-index: 999;
+    background: #0d1117;
+    padding: 6px 0 6px 0;
+    border-bottom: 1px solid #30363d;
+    margin-bottom: 6px;
+}
 
 /* 自訂元件卡片 */
 .card {
@@ -491,15 +502,39 @@ market_open = is_market_open()
 if market_open:
     st_autorefresh(interval=60_000, key="rt_refresh")
 
-# 搜尋列
-search_col, btn_col, info_col = st.columns([2, 1, 6])
-with search_col:
-    symbol = st.text_input("", value="3661", label_visibility="collapsed",
-                           placeholder="股票代號，例：2330")
-with btn_col:
-    submitted = st.button("🔍 分析", use_container_width=True)
-with info_col:
-    st.markdown(f'<div style="color:#8b949e;font-size:12px;padding-top:8px">資料來源：Yahoo Finance / TWSE｜延遲 ~15 分鐘｜{datetime.now().strftime("%Y/%m/%d %H:%M")} 台北時間</div>', unsafe_allow_html=True)
+# ── 側欄：股票搜尋 ────────────────────────────────────────────────────────────
+with st.sidebar:
+    st.markdown("## 📈 台股監測器")
+    st.markdown("---")
+    with st.form("search_form"):
+        symbol = st.text_input(
+            "股票代號",
+            value="3661",
+            placeholder="例：2330、6669、0050",
+            help="輸入台股代號後按「分析」"
+        )
+        submitted = st.form_submit_button("🔍 分析", use_container_width=True)
+
+    st.markdown("---")
+    st.markdown("**常用股票**")
+    shortcuts = {
+        "台積電 2330": "2330", "鴻海 2317": "2317",
+        "緯穎 6669": "6669", "世芯 3661": "3661",
+        "聯發科 2454": "2454", "元大台灣50 0050": "0050",
+    }
+    for label, code in shortcuts.items():
+        if st.button(label, use_container_width=True, key=f"sc_{code}"):
+            symbol = code
+
+    st.markdown("---")
+    st.markdown(
+        f'<div style="color:#8b949e;font-size:11px">'
+        f'資料來源：Yahoo Finance / TWSE<br>'
+        f'延遲約 15 分鐘<br>'
+        f'{"📡 盤中自動刷新 60s" if market_open else "💤 盤後模式"}<br>'
+        f'{datetime.now().strftime("%Y/%m/%d %H:%M")}</div>',
+        unsafe_allow_html=True
+    )
 
 # 載入資料
 with st.spinner(f"載入 {symbol}..."):
@@ -668,38 +703,45 @@ with main_right:
 </div>
 """, unsafe_allow_html=True)
 
-# ── 第二列：多週期 + 關鍵價位 + 操作建議 + 明日預測 ──────────────────────────
-r2c1, r2c2, r2c3, r2c4 = st.columns([22, 22, 22, 22], gap="small")
+# ── 第二列：多週期（分頁）+ 關鍵價位 ────────────────────────────────────────
+r2c_chart, r2c4 = st.columns([66, 22], gap="small")
 
-with r2c1:
+with r2c_chart:
+    # 盤中多一個 5分K 分頁
     if market_open and not df_intra.empty:
-        st.markdown('<div class="card-title" style="padding-left:4px">今日 5分K（盤中即時）</div>', unsafe_allow_html=True)
-        st.plotly_chart(mini_candle(df_intra, "", 170), use_container_width=True, config={"displayModeBar": False})
-        # 今日漲跌幅進度
-        if rt and rt.get("open") and rt.get("price"):
-            intra_chg = (rt["price"] - rt["open"]) / rt["open"] * 100
-            bar_color = "#3fb950" if intra_chg >= 0 else "#f85149"
-            st.markdown(f'<div style="text-align:center;font-size:12px;color:{bar_color}">今日 {intra_chg:+.2f}%（相對開盤）</div>', unsafe_allow_html=True)
+        tab_5m, tab_60m, tab_day, tab_week = st.tabs(["📊 5分K（盤中）", "⏱ 60分K", "📅 日K", "📆 週K"])
+        with tab_5m:
+            st.plotly_chart(mini_candle(df_intra, "", 210), use_container_width=True, config={"displayModeBar": False})
+            if rt and rt.get("open") and rt.get("price"):
+                intra_chg = (rt["price"] - rt["open"]) / rt["open"] * 100
+                color = "#3fb950" if intra_chg >= 0 else "#f85149"
+                st.markdown(f'<div style="text-align:center;font-size:12px;color:{color}">今日相對開盤 {intra_chg:+.2f}%</div>', unsafe_allow_html=True)
+        with tab_60m:
+            if not df_60m.empty:
+                st.plotly_chart(mini_candle(df_60m.tail(40), "", 210), use_container_width=True, config={"displayModeBar": False})
+        with tab_day:
+            st.plotly_chart(mini_candle(df.tail(60), "", 210), use_container_width=True, config={"displayModeBar": False})
+            st.markdown(f'<div style="text-align:center;font-size:12px;color:#8b949e">{t_txt}</div>', unsafe_allow_html=True)
+        with tab_week:
+            if not df_wk.empty:
+                st.plotly_chart(mini_candle(df_wk.tail(52), "", 210), use_container_width=True, config={"displayModeBar": False})
     else:
-        st.markdown('<div class="card-title" style="padding-left:4px">60分K（短線）</div>', unsafe_allow_html=True)
-        if not df_60m.empty:
-            st.plotly_chart(mini_candle(df_60m.tail(40), "", 170), use_container_width=True, config={"displayModeBar": False})
-        if not df_60m.empty and "MA5" in df_60m.columns:
-            lm = df_60m.iloc[-1]
-            s60_txt = "高檔震盪" if float(lm["Close"]) > float(lm.get("MA20", lm["Close"])) else "弱勢整理"
-            st.markdown(f'<div style="text-align:center;font-size:12px;color:#8b949e">{s60_txt}</div>', unsafe_allow_html=True)
-
-with r2c2:
-    st.markdown('<div class="card-title" style="padding-left:4px">日K（中線）</div>', unsafe_allow_html=True)
-    st.plotly_chart(mini_candle(df.tail(60), "", 170), use_container_width=True, config={"displayModeBar": False})
-    st.markdown(f'<div style="text-align:center;font-size:12px;color:#8b949e">{t_txt}</div>', unsafe_allow_html=True)
-
-with r2c3:
-    st.markdown('<div class="card-title" style="padding-left:4px">週K（長線）</div>', unsafe_allow_html=True)
-    if not df_wk.empty:
-        st.plotly_chart(mini_candle(df_wk.tail(52), "", 170), use_container_width=True, config={"displayModeBar": False})
-    lw_txt = "主升段後期" if score >= 3 else "波段整理中"
-    st.markdown(f'<div style="text-align:center;font-size:12px;color:#8b949e">{lw_txt}</div>', unsafe_allow_html=True)
+        tab_60m, tab_day, tab_week = st.tabs(["⏱ 60分K（短線）", "📅 日K（中線）", "📆 週K（長線）"])
+        with tab_60m:
+            if not df_60m.empty:
+                st.plotly_chart(mini_candle(df_60m.tail(40), "", 210), use_container_width=True, config={"displayModeBar": False})
+            if not df_60m.empty and "MA5" in df_60m.columns:
+                lm = df_60m.iloc[-1]
+                s60 = "高檔震盪" if float(lm["Close"]) > float(lm.get("MA20", lm["Close"])) else "弱勢整理"
+                st.markdown(f'<div style="text-align:center;font-size:12px;color:#8b949e">{s60}</div>', unsafe_allow_html=True)
+        with tab_day:
+            st.plotly_chart(mini_candle(df.tail(60), "", 210), use_container_width=True, config={"displayModeBar": False})
+            st.markdown(f'<div style="text-align:center;font-size:12px;color:#8b949e">{t_txt}</div>', unsafe_allow_html=True)
+        with tab_week:
+            if not df_wk.empty:
+                st.plotly_chart(mini_candle(df_wk.tail(52), "", 210), use_container_width=True, config={"displayModeBar": False})
+            lw_txt = "主升段後期" if score >= 3 else "波段整理中"
+            st.markdown(f'<div style="text-align:center;font-size:12px;color:#8b949e">{lw_txt}</div>', unsafe_allow_html=True)
 
 with r2c4:
     # 關鍵價位
