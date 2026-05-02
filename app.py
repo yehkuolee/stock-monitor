@@ -121,6 +121,21 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
 /* 隱藏 streamlit 預設間距 */
 hr { margin: 6px 0 !important; border-color: #30363d !important; }
 h3 { font-size: 13px !important; margin: 4px 0 !important; color: #8b949e !important; font-weight:600; letter-spacing:0.05em; }
+
+/* 搜尋列：手機強制同行，各佔 50% */
+div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] {
+    flex-wrap: nowrap !important;
+    align-items: flex-end !important;
+    gap: 6px !important;
+}
+div[data-testid="stForm"] div[data-testid="column"] {
+    min-width: 0 !important;
+    flex: 1 1 0% !important;
+    width: 50% !important;
+}
+div[data-testid="stFormSubmitButton"] > button {
+    height: 38px !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -588,13 +603,16 @@ with st.sidebar:
 
 # ── 主畫面搜尋列（桌機 + 手機都能用）────────────────────────────────────────
 with st.form("main_search", border=False):
-    input_symbol = st.text_input(
-        "股票代號或名稱",
-        value=st.session_state.symbol,
-        placeholder="代號或名稱，例：2330、台積電",
-        label_visibility="collapsed",
-    )
-    main_submitted = st.form_submit_button("🔍 分析", use_container_width=True, type="primary")
+    col_input, col_btn = st.columns([1, 1])
+    with col_input:
+        input_symbol = st.text_input(
+            "股票代號或名稱",
+            value=st.session_state.symbol,
+            placeholder="代號或名稱，例：2330、台積電",
+            label_visibility="collapsed",
+        )
+    with col_btn:
+        main_submitted = st.form_submit_button("🔍 分析", use_container_width=True, type="primary")
 if main_submitted and input_symbol.strip():
     stock_map = get_stock_map()
     resolved, matched_name = resolve_symbol(input_symbol.strip(), stock_map)
