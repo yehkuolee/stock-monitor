@@ -28,21 +28,13 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
 [data-testid="stHeader"] { background: #0d1117 !important; }
 [data-testid="stSidebar"] { background: #161b22 !important; }
 
-/* 搜尋列 fixed：永遠釘在 header 下方，不管頁面 scroll 到哪都可見 */
-div[data-testid="stForm"] {
-    position: fixed !important;
-    top: var(--header-height, 3rem);
-    left: 0;
-    right: 0;
-    z-index: 100;
-    background: #0d1117;
-    padding: 4px 1rem 6px;
-    border-bottom: 1px solid #30363d;
-}
+/* 壓縮頁面 padding */
+.block-container { padding: 0.5rem 1rem 0.5rem 1rem !important; max-width: 100% !important; }
 
-/* 主內容往下推，不被 fixed form 蓋住
-   （header ≈ 3rem + form ≈ 3rem = 6rem，加 0.5rem buffer） */
-.block-container { padding: 6.5rem 1rem 0.5rem 1rem !important; max-width: 100% !important; }
+/* 手機上隱藏主頁面搜尋列（改用側欄） */
+@media (max-width: 768px) {
+    div[data-testid="stForm"] { display: none !important; }
+}
 [data-testid="stVerticalBlock"] { gap: 0.3rem !important; }
 
 /* 自訂元件卡片 */
@@ -588,6 +580,26 @@ shortcuts = {
 }
 with st.sidebar:
     st.markdown("## 📈 台股監測器")
+
+    # 側欄搜尋框（手機主要入口）
+    with st.form("sidebar_search", border=False):
+        sb_input = st.text_input(
+            "搜尋股票",
+            value=st.session_state.symbol,
+            placeholder="輸入代號或名稱",
+            label_visibility="collapsed",
+        )
+        sb_submitted = st.form_submit_button("🔍 分析", use_container_width=True, type="primary")
+    if sb_submitted and sb_input.strip():
+        stock_map = get_stock_map()
+        resolved, matched_name = resolve_symbol(sb_input.strip(), stock_map)
+        st.session_state.symbol = resolved
+        if matched_name:
+            st.session_state.matched_name = matched_name
+        else:
+            st.session_state.pop("matched_name", None)
+        st.rerun()
+
     st.markdown("---")
     st.markdown("**快速切換**")
     for label, code in shortcuts.items():
