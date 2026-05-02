@@ -1,0 +1,39 @@
+name: 台股短線篩選器
+
+on:
+  schedule:
+    # 台北時間 09:00-13:30 = UTC 01:00-05:30，每 5 分鐘執行
+    # cron 最小單位是 5 分鐘，拆成兩條涵蓋完整時段
+    - cron: '0,5,10,15,20,25,30,35,40,45,50,55 1-5 * * 1-5'
+  workflow_dispatch:    # 手動觸發（測試用）
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8   # 防止超時卡死
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt -q
+
+      - name: 確認台北時間
+        run: |
+          TZ=Asia/Taipei date
+          echo "UTC: $(date -u)"
+
+      - name: 執行篩選器
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          cd $GITHUB_WORKSPACE
+          python screener.py
