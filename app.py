@@ -31,9 +31,9 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
 /* 壓縮頁面 padding */
 .block-container { padding: 0.5rem 1rem 0.5rem 1rem !important; max-width: 100% !important; }
 
-/* 手機上隱藏主頁面搜尋列（改用側欄） */
+/* 手機上隱藏主頁面搜尋列（側欄的 form 不隱藏） */
 @media (max-width: 768px) {
-    div[data-testid="stForm"] { display: none !important; }
+    [data-testid="stMain"] div[data-testid="stForm"] { display: none !important; }
 }
 [data-testid="stVerticalBlock"] { gap: 0.3rem !important; }
 
