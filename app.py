@@ -497,35 +497,29 @@ def mini_candle(df, title, height=180):
 
 # ── UI 主體 ───────────────────────────────────────────────────────────────────
 
+# Session state 管理股票代號
+if "symbol" not in st.session_state:
+    st.session_state.symbol = "3661"
+
 # 盤中自動刷新（每 60 秒）
 market_open = is_market_open()
 if market_open:
     st_autorefresh(interval=60_000, key="rt_refresh")
 
-# ── 側欄：股票搜尋 ────────────────────────────────────────────────────────────
+# ── 側欄：快捷按鈕 ───────────────────────────────────────────────────────────
+shortcuts = {
+    "台積電 2330": "2330", "鴻海 2317": "2317",
+    "緯穎 6669": "6669", "世芯 3661": "3661",
+    "聯發科 2454": "2454", "元大台灣50 0050": "0050",
+}
 with st.sidebar:
     st.markdown("## 📈 台股監測器")
     st.markdown("---")
-    with st.form("search_form"):
-        symbol = st.text_input(
-            "股票代號",
-            value="3661",
-            placeholder="例：2330、6669、0050",
-            help="輸入台股代號後按「分析」"
-        )
-        submitted = st.form_submit_button("🔍 分析", use_container_width=True)
-
-    st.markdown("---")
-    st.markdown("**常用股票**")
-    shortcuts = {
-        "台積電 2330": "2330", "鴻海 2317": "2317",
-        "緯穎 6669": "6669", "世芯 3661": "3661",
-        "聯發科 2454": "2454", "元大台灣50 0050": "0050",
-    }
+    st.markdown("**快速切換**")
     for label, code in shortcuts.items():
         if st.button(label, use_container_width=True, key=f"sc_{code}"):
-            symbol = code
-
+            st.session_state.symbol = code
+            st.rerun()
     st.markdown("---")
     st.markdown(
         f'<div style="color:#8b949e;font-size:11px">'
@@ -536,16 +530,22 @@ with st.sidebar:
         unsafe_allow_html=True
     )
 
-# 主畫面搜尋列（手機用，桌機可用 sidebar）
+# ── 主畫面搜尋列（桌機 + 手機都能用）────────────────────────────────────────
 with st.form("main_search", border=False):
     mc1, mc2 = st.columns([5, 1])
     with mc1:
-        main_symbol = st.text_input("", value=symbol, label_visibility="collapsed",
-                                    placeholder="輸入股票代號，例：2330、6669、0050")
+        input_symbol = st.text_input(
+            "", value=st.session_state.symbol,
+            label_visibility="collapsed",
+            placeholder="輸入股票代號，例：2330、6669、0050"
+        )
     with mc2:
-        main_submitted = st.form_submit_button("🔍", use_container_width=True)
-    if main_submitted and main_symbol:
-        symbol = main_symbol
+        main_submitted = st.form_submit_button("🔍 分析", use_container_width=True)
+if main_submitted and input_symbol.strip():
+    st.session_state.symbol = input_symbol.strip()
+    st.rerun()
+
+symbol = st.session_state.symbol
 
 # 載入資料
 with st.spinner(f"載入 {symbol}..."):
