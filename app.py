@@ -28,8 +28,21 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
 [data-testid="stHeader"] { background: #0d1117 !important; }
 [data-testid="stSidebar"] { background: #161b22 !important; }
 
-/* 壓縮頁面 padding */
-.block-container { padding: 0.5rem 1rem 0.5rem 1rem !important; max-width: 100% !important; }
+/* 搜尋列 fixed：永遠釘在 header 下方，不管頁面 scroll 到哪都可見 */
+div[data-testid="stForm"] {
+    position: fixed !important;
+    top: var(--header-height, 3rem);
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: #0d1117;
+    padding: 4px 1rem 6px;
+    border-bottom: 1px solid #30363d;
+}
+
+/* 主內容往下推，不被 fixed form 蓋住
+   （header ≈ 3rem + form ≈ 3rem = 6rem，加 0.5rem buffer） */
+.block-container { padding: 6.5rem 1rem 0.5rem 1rem !important; max-width: 100% !important; }
 [data-testid="stVerticalBlock"] { gap: 0.3rem !important; }
 
 /* 自訂元件卡片 */
@@ -561,36 +574,6 @@ def mini_candle(df, title, height=180):
 if "symbol" not in st.session_state:
     st.session_state.symbol = "3661"
 
-# 強制把頁面 scrollTop 設回 0（持續 1.5 秒蓋過 Streamlit 的初始化行為）
-# sessionStorage 確保只在每次瀏覽器 Session 第一次載入時執行
-st.components.v1.html("""
-<script>
-(function() {
-    var KEY = '_st_scroll_init';
-    if (sessionStorage.getItem(KEY)) return;
-    sessionStorage.setItem(KEY, '1');
-    var n = 0;
-    (function go() {
-        try {
-            var p = window.parent;
-            /* 找 Streamlit 的 scroll container（div.main / stMain 下的第一個 div） */
-            var sels = [
-                '[data-testid="stMain"] > div',
-                '[data-testid="stAppViewBlockContainer"]',
-                '.main'
-            ];
-            sels.forEach(function(sel) {
-                p.document.querySelectorAll(sel).forEach(function(el) {
-                    el.scrollTop = 0;
-                });
-            });
-            p.scrollTo(0, 0);
-        } catch(e) {}
-        if (++n < 15) setTimeout(go, 100);   /* 每 100ms 一次，共 1.5 秒 */
-    })();
-})();
-</script>
-""", height=0, scrolling=False)
 
 # 盤中自動刷新（每 60 秒）
 market_open = is_market_open()
