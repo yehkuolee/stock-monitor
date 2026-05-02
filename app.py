@@ -15,7 +15,7 @@ st.set_page_config(
     page_title="台股技術分析監測器",
     layout="wide",
     page_icon="📈",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 st.markdown("""
@@ -535,6 +535,17 @@ with st.sidebar:
         f'{datetime.now().strftime("%Y/%m/%d %H:%M")}</div>',
         unsafe_allow_html=True
     )
+
+# 主畫面搜尋列（手機用，桌機可用 sidebar）
+with st.form("main_search", border=False):
+    mc1, mc2 = st.columns([5, 1])
+    with mc1:
+        main_symbol = st.text_input("", value=symbol, label_visibility="collapsed",
+                                    placeholder="輸入股票代號，例：2330、6669、0050")
+    with mc2:
+        main_submitted = st.form_submit_button("🔍", use_container_width=True)
+    if main_submitted and main_symbol:
+        symbol = main_symbol
 
 # 載入資料
 with st.spinner(f"載入 {symbol}..."):
