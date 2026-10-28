@@ -29,7 +29,7 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
 [data-testid="stSidebar"] { background: #161b22 !important; }
 
 /* 壓縮頁面 padding */
-.block-container { padding: 0.5rem 1rem 0.5rem 1rem !important; max-width: 100% !important; }
+.block-container { padding: 3.75rem 1rem 0.5rem 1rem !important; max-width: 100% !important; }  /* 上方留給頂端標題列，不然第一列（頁面切換）會被蓋住 */
 
 /* 手機上讓主頁面搜尋列隱形但保留佔位（讓 Streamlit scroll 計算正確） */
 @media (max-width: 768px) {
