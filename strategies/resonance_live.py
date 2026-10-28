@@ -70,13 +70,21 @@ def watchlist_text(day, setups: list[dict], bar_min: int) -> str:
     return head + body + tail
 
 
-def alert_text(a: dict, bar_min: int) -> str:
+def alert_text(a: dict, bar_min: int, max_risk_pct: float = 3) -> str:
     t = f"{a['bar_t'] // 10000:02d}:{a['bar_t'] // 100 % 100:02d}"
+    chase = a["stop"] / (1 - max_risk_pct / 100)          # 超過這個價，停損距離 > 3%
+    loss_per_lot = (a["price"] - a["stop"]) * 1000
+    ema9 = f"（昨日 {a['ema_d9']:.2f}）" if a.get("ema_d9") else " "
     return (f"🔔 **共振回踩作多｜{a['code']} {a['name']}**（{t} 的 {bar_min} 分 K）\n"
             f"進場 **{a['price']:g}**（突破反轉高點 {a['breakout']:g}）\n"
-            f"停損 {a['stop']:g}（-{a['risk_pct']}%，今日低點）\n"
+            f"停損 {a['stop']:g}（-{a['risk_pct']}%，今日低點）｜每張最多賠 {loss_per_lot:,.0f} 元\n"
             f"目標 3R {a['target_3r']:g}｜5R {a['target_5r']:g}\n"
-            f"AVWAP {a['avwap']:g}｜原文出場：3～5R 先出 1/3，其餘跌破日 EMA9 出場")
+            f"📝 **操作建議**\n"
+            f"① 買在 {a['price']:g} 附近；已經漲過 **{chase:.2f}** 就不追（停損會超過 {max_risk_pct:g}%）\n"
+            f"② 進場後立刻設觸價停損 **{a['stop']:g}**\n"
+            f"③ 漲到 **{a['target_3r']:g}**（3R）先賣 1/3，之後就算剩下的跌回停損，整筆也不會虧\n"
+            f"④ 剩下 2/3 每天看收盤，跌破日 EMA9{ema9}就全部出場\n"
+            f"AVWAP {a['avwap']:g}｜策略訊號僅供參考，不構成投資建議")
 
 
 def load_alerts(day) -> list[dict]:
