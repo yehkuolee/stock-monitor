@@ -28,6 +28,13 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
 [data-testid="stHeader"] { background: #0d1117 !important; }
 [data-testid="stSidebar"] { background: #161b22 !important; }
 
+/* 淺色主題的內建元件字色太暗，深色背景上看不到 → 提高對比 */
+[data-testid="stRadio"] label p { color: #e6edf3 !important; font-weight: 600; }
+[data-testid="stMetricLabel"] p { color: #8b949e !important; }
+[data-testid="stMetricValue"] { color: #e6edf3 !important; }
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] [data-testid="stMarkdown"] p { color: #e6edf3 !important; }
+
 /* 壓縮頁面 padding */
 .block-container { padding: 3.75rem 1rem 0.5rem 1rem !important; max-width: 100% !important; }  /* 上方留給頂端標題列，不然第一列（頁面切換）會被蓋住 */
 
