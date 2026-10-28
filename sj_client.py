@@ -16,8 +16,8 @@ ENV_FILE = Path(__file__).parent / ".env"
 
 def env(name: str) -> str | None:
     """先讀環境變數，沒有再讀 .env"""
-    if os.environ.get(name):
-        return os.environ[name]
+    if os.environ.get(name, "").strip():
+        return os.environ[name].strip()     # GitHub Secrets 貼上時常多帶換行
     if ENV_FILE.exists():
         for line in ENV_FILE.read_text(encoding="utf-8").splitlines():
             m = re.match(rf"\s*{name}\s*=\s*(.*)$", line)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-共振回踩作多 — 盤中盯盤（GitHub Actions 每天 08:20 啟動，跑到 10:30）
+共振回踩作多 — 盤中盯盤（GitHub Actions 每天 08:00 啟動，跑到 10:30）
 
 流程：盤前篩選 → Discord 推觀察名單 → 永豐逐筆訂閱 → 組 15 分 K → 盤中引擎 → 觸發就推 Discord
 版本：照原文（掃低＝跌破支撐下緣、收復＝收回下緣），見 resonance_intraday.IntradayParams
@@ -100,7 +100,7 @@ def publish(msg: str):
 
 
 def subscribe_all(api, codes, q: queue.Queue):
-    api.set_on_tick_stk_v1_callback(lambda exchange, tick: q.put(tick))
+    api.set_on_tick_stk_v1_callback(lambda tick: q.put(tick))
     for c in codes:
         api.subscribe(api.Contracts.Stocks[c], quote_type=sj.QuoteType.Tick, version=sj.QuoteVersion.v1)
 
