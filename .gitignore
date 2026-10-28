@@ -3,3 +3,7 @@ __pycache__/
 .env
 .DS_Store
 *.log
+.venv/
+data/cache/
+data/bt_*.json
+data/resonance_backtest.json

@@ -1,0 +1,48 @@
+name: 共振回踩雷達
+
+on:
+  schedule:
+    # 台北時間 08:20 = UTC 00:20，週一到週五；程式自己跑到 10:30 結束
+    - cron: '20 0 * * 1-5'
+  workflow_dispatch:    # 手動觸發（測試用）
+
+permissions:
+  contents: write       # 把觀察名單、警示紀錄寫回 repo，給網頁讀
+
+jobs:
+  radar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt shioaji -q
+
+      - name: 確認台北時間＋設定 git 身分（程式中途會 commit 名單與警示）
+        run: |
+          TZ=Asia/Taipei date
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: 盤前篩選＋盤中盯盤
+        env:
+          SJ_API_KEY: ${{ secrets.SJ_API_KEY }}
+          SJ_SECRET_KEY: ${{ secrets.SJ_SECRET_KEY }}
+          DISCORD_RESONANCE_WEBHOOK: ${{ secrets.DISCORD_RESONANCE_WEBHOOK }}
+        run: python -m strategies.resonance_live
+
+      - name: 存回觀察名單與警示紀錄
+        if: always()
+        run: |
+          git add data/resonance_watchlist.json data/resonance_alerts.json 2>/dev/null || true
+          git diff --cached --quiet || git commit -m "data: 共振回踩 $(TZ=Asia/Taipei date +%F)"
+          git pull --rebase -q && git push

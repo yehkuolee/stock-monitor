@@ -597,6 +597,7 @@ with st.sidebar:
         stock_map = get_stock_map()
         resolved, matched_name = resolve_symbol(sb_input.strip(), stock_map)
         st.session_state.symbol = resolved
+        st.session_state["_goto_page"] = "stock"
         if matched_name:
             st.session_state.matched_name = matched_name
         else:
@@ -608,6 +609,7 @@ with st.sidebar:
     for label, code in shortcuts.items():
         if st.button(label, use_container_width=True, key=f"sc_{code}"):
             st.session_state.symbol = code
+            st.session_state["_goto_page"] = "stock"
             st.rerun()
     st.markdown("---")
     st.markdown(
@@ -618,6 +620,17 @@ with st.sidebar:
         f'{datetime.now().strftime("%Y/%m/%d %H:%M")}</div>',
         unsafe_allow_html=True
     )
+
+# ── 頁面切換：個股分析 / 共振回踩 ────────────────────────────────────────────
+PAGES = {"stock": "📈 個股分析", "resonance": "🎯 共振回踩"}
+if "_goto_page" in st.session_state:
+    st.session_state.page = st.session_state.pop("_goto_page")
+page = st.radio("頁面", list(PAGES), format_func=PAGES.get, key="page",
+                horizontal=True, label_visibility="collapsed")
+if page == "resonance":
+    import resonance_page
+    resonance_page.render()
+    st.stop()
 
 # ── 主畫面搜尋列（桌機 + 手機都能用）────────────────────────────────────────
 with st.form("main_search", border=False):
