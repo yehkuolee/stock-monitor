@@ -1,0 +1,47 @@
+name: 共振回踩持倉追蹤
+
+on:
+  schedule:
+    # 台北時間 13:45 = UTC 05:45，週一到週五，收盤後檢查停損／3R／跌破 EMA9
+    - cron: '45 5 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt shioaji -q
+
+      - name: 設定 git 身分
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: 收盤後出場追蹤
+        env:
+          SJ_API_KEY: ${{ secrets.SJ_API_KEY }}
+          SJ_SECRET_KEY: ${{ secrets.SJ_SECRET_KEY }}
+          DISCORD_RESONANCE_WEBHOOK: ${{ secrets.DISCORD_RESONANCE_WEBHOOK }}
+        run: python -m strategies.resonance_tracker
+
+      - name: 存回持倉紀錄
+        if: always()
+        run: |
+          git add data 2>/dev/null || true
+          git diff --cached --quiet || git commit -m "data: 共振回踩持倉 $(TZ=Asia/Taipei date +%F)"
+          git pull --rebase -q && git push

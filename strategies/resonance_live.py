@@ -19,7 +19,7 @@ import shioaji as sj
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import sj_client
 from strategies import resonance_pullback as pre
-from strategies.resonance_intraday import Engine, IntradayParams
+from strategies.resonance_intraday import Engine, IntradayParams, reference_prices
 
 TAIPEI = timezone(timedelta(hours=8))
 ALERT_FILE = Path(__file__).resolve().parent.parent / "data" / "resonance_alerts.json"
@@ -54,15 +54,20 @@ class Discord:
 def watchlist_text(day, setups: list[dict], bar_min: int) -> str:
     if not setups:
         return f"📋 **共振回踩｜{day:%m/%d} 觀察名單**\n今天沒有符合盤前條件的股票，不盯盤。"
-    rows = []
+    top, rest = [], []
     for s in sorted(setups, key=lambda x: x["zone_width_pct"]):
+        r = reference_prices(s)
         dist = (s["last_close"] / s["zone_lo"] - 1) * 100
-        mark = "🎯" if s["zone_ok"] else "　"
-        rows.append(f"{mark} **{s['code']} {s['name']}** 昨收 {s['last_close']:g}｜支撐 {s['zone_lo']:.2f}～{s['zone_hi']:.2f}"
-                    f"（寬 {s['zone_width_pct']}%）｜距下緣 {dist:+.1f}%")
-    n_ok = sum(s["zone_ok"] for s in setups)
-    return (f"📋 **共振回踩｜{day:%m/%d} 觀察名單**（{len(setups)} 檔，🎯 支撐區 ≤3% 共 {n_ok} 檔）\n"
-            f"09:00～10:30 盯 {bar_min} 分 K：跌破支撐下緣 → 強紅 K 收回 → 突破反轉高點\n" + "\n".join(rows))
+        if r["possible"]:
+            top.append(f"🎯 **{s['code']} {s['name']}** 昨收 {s['last_close']:g}（距下緣 {dist:+.1f}%）\n"
+                       f"　警戒價 **{r['warn']:g}**｜進場區間 **{r['min_entry']:g}～{r['max_entry']:g}**｜移動停損 EMA9 {r['trail_ema9']:g}")
+        else:
+            rest.append(f"{s['code']} {s['name']}")
+    head = (f"📋 **共振回踩｜{day:%m/%d} 觀察名單**（{len(setups)} 檔，有機會觸發 {len(top)} 檔）\n"
+            f"09:00～10:30 盯 {bar_min} 分 K：跌破警戒價 → 強紅 K 收回 → 突破落在進場區間就發警示\n")
+    body = "\n".join(top) if top else "今天沒有一檔的價位條件成立，大概率不會響。"
+    tail = f"\n其他 {len(rest)} 檔支撐太散、今天不會觸發：" + "、".join(rest) if rest else ""
+    return head + body + tail
 
 
 def alert_text(a: dict, bar_min: int) -> str:
@@ -90,7 +95,7 @@ def publish(msg: str):
     if not os.environ.get("GITHUB_ACTIONS"):
         return
     root = Path(__file__).resolve().parent.parent
-    cmds = [["git", "add", "data/resonance_watchlist.json", "data/resonance_alerts.json"],
+    cmds = [["git", "add", "data"],          # .gitignore 已排除快取與回測暫存
             ["git", "commit", "-m", msg], ["git", "pull", "--rebase", "-q"], ["git", "push", "-q"]]
     for c in cmds:
         r = subprocess.run(c, cwd=root, capture_output=True, text=True)

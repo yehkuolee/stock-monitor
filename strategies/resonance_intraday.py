@@ -136,7 +136,20 @@ class Engine:
         self.last_alert_bar = n
         self.stats["alert"] += 1
         r = price - stop
-        return {"code": s["code"], "name": s["name"], "bar_t": bar_t, "price": price,
+        return {"code": s["code"], "name": s["name"], "bar_t": bar_t, "price": round(price, 2),
                 "breakout": self.reversal_high, "stop": stop, "risk_pct": round(risk, 2),
                 "target_3r": round(price + 3 * r, 2), "target_5r": round(price + 5 * r, 2),
-                "avwap": round(self.live_avwap, 2)}
+                "avwap": round(self.live_avwap, 2), "ema_d9": s["ema_d9"]}
+
+
+def reference_prices(s: dict, p: IntradayParams = IntradayParams()) -> dict:
+    """盤前參考價（由規則回推，盤中 AVWAP 會小幅移動）
+    警戒價：跌破支撐下緣才算掃低
+    進場上限：停損＝今日低點 < 下緣，停損距離要 ≤ MaxRiskPct → 進場 < 下緣 / (1 - 3%)
+    進場下限：突破價要高於 AVWAP、日 EMA50、週 EMA9/21
+    移動停損：原文出場，剩餘部位跌破日 EMA9 出場"""
+    lo = s["zone_lo"]
+    max_entry = lo / (1 - p.MaxRiskPct / 100)
+    min_entry = max(s["avwap0"], s["ema_d50"], s["ema_w9"], s["ema_w21"])
+    return {"warn": round(lo, 2), "min_entry": round(min_entry, 2), "max_entry": round(max_entry, 2),
+            "possible": min_entry < max_entry, "trail_ema9": round(s["ema_d9"], 2)}
