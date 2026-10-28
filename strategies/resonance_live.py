@@ -73,12 +73,12 @@ def watchlist_text(day, setups: list[dict], bar_min: int) -> str:
 def alert_text(a: dict, bar_min: int) -> str:
     t = f"{a['bar_t'] // 10000:02d}:{a['bar_t'] // 100 % 100:02d}"
     loss_per_lot = (a["price"] - a["stop"]) * 1000
-    ema9 = f"，目前 {a['ema_d9']:.2f}" if a.get("ema_d9") else ""
+    ema9 = f"\nEMA9 **{a['ema_d9']:.2f}** 元（昨日收盤算出，每天會變）" if a.get("ema_d9") else ""
     return (f"🔔 **共振回踩作多｜{a['code']} {a['name']}**（{t} 的 {bar_min} 分 K）\n"
             f"進場 **{a['price']:g}**（突破反轉高點 {a['breakout']:g}）\n"
             f"停損 {a['stop']:g}（-{a['risk_pct']}%，今日低點）｜每張最多賠 {loss_per_lot:,.0f} 元\n"
             f"目標 3R **{a['target_3r']:g}**（賣三分之一）\n"
-            f"　　 5R **{a['target_5r']:g}**（剩下 2/3 跌破日 EMA9 再出場{ema9}）")
+            f"　　 5R **{a['target_5r']:g}**（剩下 2/3 跌破日 EMA9 再出場）" + ema9)
 
 
 def load_alerts(day) -> list[dict]:

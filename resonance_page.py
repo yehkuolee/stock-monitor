@@ -76,7 +76,7 @@ def render():
 <div class="card" style="border-left:4px solid #f85149">
   <div class="card-title">🔔 {_fmt_bar(a['bar_t'])} 的 15 分 K｜{a['code']} {a['name']}（{a.get('time', '')} 觸發）</div>
   進場 <b>{a['price']:g}</b>（突破 {a['breakout']:g}）｜停損 {a['stop']:g}（-{a['risk_pct']}%）｜每張最多賠 {(a['price'] - a['stop']) * 1000:,.0f} 元<br>
-  目標 3R <b>{a['target_3r']:g}</b>（賣三分之一）｜5R <b>{a['target_5r']:g}</b>（剩下 2/3 跌破日 EMA9 再出場）
+  目標 3R <b>{a['target_3r']:g}</b>（賣三分之一）｜5R <b>{a['target_5r']:g}</b>（剩下 2/3 跌破日 EMA9 再出場）｜EMA9 <b>{a.get('ema_d9', 0):.2f}</b> 元
 </div>""", unsafe_allow_html=True)
 
     # ── 觀察名單 ──
