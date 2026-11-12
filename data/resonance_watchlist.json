@@ -1,5 +1,5 @@
 {
-  "asof": "2026-11-11",
+  "asof": "2026-11-12",
   "params": {
     "DSeed": 250,
     "WSeed": 100,
@@ -15,30 +15,30 @@
     "MinAvgVol": 1000,
     "MaxZonePct": 3
   },
-  "generated": "2026-11-11T12:52:00+08:00",
+  "generated": "2026-11-12T13:53:52+08:00",
   "stocks": [
     {
       "code": "6199",
       "name": "天品",
       "market": "OTC",
-      "avg_vol": 8364,
+      "avg_vol": 8523,
       "base_pct": 9.62,
-      "prior_gain": 28.52,
-      "anchor_ago": 30,
+      "prior_gain": 25.38,
+      "anchor_ago": 31,
       "anchor_date": "2026-09-23",
-      "ema_d9": 162.7155,
-      "ema_d21": 153.4318,
-      "ema_d50": 135.7627,
+      "ema_d9": 163.8724,
+      "ema_d21": 154.8016,
+      "ema_d50": 137.0465,
       "ema_w9": 140.1332,
       "ema_w21": 123.0299,
       "ema_w9_prev": 134.2915,
-      "past_amount": 34437658000.0,
-      "past_volume": 231613.0,
-      "avwap0": 148.6862,
-      "zone_lo": 148.6862,
-      "zone_hi": 162.7155,
-      "zone_width_pct": 9.44,
-      "last_close": 167.5,
+      "past_amount": 35895231000.0,
+      "past_volume": 240265.0,
+      "avwap0": 149.3985,
+      "zone_lo": 149.3985,
+      "zone_hi": 163.8724,
+      "zone_width_pct": 9.69,
+      "last_close": 168.5,
       "zone_ok": false
     }
   ]
